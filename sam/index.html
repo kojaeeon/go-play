@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101c1b">
+<meta name="description" content="189년과 196년을 배경으로 군주를 골라 도시를 운영하고 천하 통일에 도전하는 턴제 전략 게임.">
+<title>천하의 판도</title>
+<style>
+:root{color-scheme:dark;--bg:#101918;--panel:#162422;--ink:#f4ebd8;--muted:#aabdb6;--line:#314640;--gold:#e7bb76;--shadow:#07100ea3;font-family:system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;min-width:290px;background:radial-gradient(ellipse at 16% 0,#243831 0%,transparent 52%),var(--bg);color:var(--ink)}
+button,select,input{font:inherit}
+button,select{min-height:38px;border:1px solid #4c6258;border-radius:7px;background:#20312b;color:var(--ink);padding:7px 11px}
+button{cursor:pointer}
+button:hover:enabled{background:#32453a;border-color:#9c976e}
+button:disabled{opacity:.45;cursor:default}
+button[aria-pressed="true"],button.primary{background:#e7bb76;border-color:#e7bb76;color:#201a10;font-weight:750}
+:focus-visible{outline:2px solid #f3d29b;outline-offset:3px}
+.shell{max-width:1470px;margin:auto;padding:0 clamp(12px,4vw,56px) 32px}
+header{min-height:66px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:22px}
+header strong{font-family:Georgia,"Batang",serif;letter-spacing:.04em;font-size:1.43rem}
+.seal{display:inline-grid;place-items:center;margin-right:9px;height:32px;width:32px;border:1px solid #d37461;color:#ee9d88;border-radius:7px;font-family:serif;font-size:1.04rem}
+.setup{max-width:830px;margin:clamp(22px,8vh,84px) auto;padding:clamp(18px,4vw,43px);background:#1b2b25ec;border:1px solid #455a4b;border-radius:17px;box-shadow:0 20px 65px var(--shadow)}
+.setup p{color:var(--muted);line-height:1.65}
+.setup h1{margin:0;color:var(--ink);font-family:Georgia,"Batang",serif;font-size:clamp(2rem,6vw,3.1rem);letter-spacing:-.05em}
+.setup h2{font-size:1rem;margin:24px 0 8px}
+.scenarios,.lords,.starter{display:flex;flex-wrap:wrap;gap:9px}
+.scenarios button{flex:1 1 180px;min-height:65px;text-align:left;padding-inline:15px}
+.starter{margin-top:25px}
+.hud,.game-grid{display:grid;gap:13px}
+.hud{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:13px}
+.stat,.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.stat{padding:10px clamp(8px,2vw,15px);min-height:63px}
+.stat span{display:block;color:var(--muted);font-size:.77rem}
+.stat strong{display:block;color:var(--gold);font-size:clamp(.87rem,2.1vw,1.21rem);margin-top:3px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.game-grid{grid-template-columns:minmax(0,1.8fr) minmax(282px,1fr);align-items:start}
+.panel{overflow:hidden;min-width:0}
+.panel-title{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:13px 15px;border-bottom:1px solid var(--line);background:#1c2d27}
+.panel-title h2,.panel-title h3{font-size:1rem;margin:0}
+.panel-title span{font-size:.8rem;color:var(--muted)}
+.map{position:relative;height:clamp(320px,49vw,535px);background:radial-gradient(ellipse at 68% 38%,#374b35,#273e35 57%,#1c302b 85%);isolation:isolate}
+.map canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#map-cities{position:absolute;inset:0}
+.city{position:absolute;transform:translate(-50%,-50%);min-height:33px;min-width:48px;padding:3px 6px;display:grid;justify-items:center;gap:0;background:#152620f5;color:#f1f6ef;border:1px solid var(--owner);box-shadow:0 2px 12px #07130cc0;font-weight:700;font-size:.85rem;white-space:nowrap}
+.city small{color:var(--owner);font-size:.66rem;font-weight:650}
+.city[aria-pressed="true"]{background:#edcf93;color:#1e281c;border-color:#fff1c4;z-index:2}
+.city[aria-pressed="true"] small{color:#414627}
+.legend{display:flex;align-items:center;flex-wrap:wrap;gap:7px 15px;padding:10px 14px;min-height:45px;border-top:1px solid var(--line);font-size:.77rem;color:var(--muted)}
+.legend i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--owner);margin-right:5px}
+.orders{padding:13px;display:grid;gap:12px}
+.timeline{margin-top:13px}
+.timeline ul{list-style:none;margin:0;padding:9px 14px;max-height:220px;overflow:auto}
+.timeline li{display:grid;grid-template-columns:51px 1fr;gap:9px;padding:6px 0;border-bottom:1px solid #31464077;font-size:.84rem;color:#e0ece6}
+.timeline time{color:#a8bfb4;font-variant-numeric:tabular-nums}
+.stripes{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin:0}
+.stripes div{background:#20312b;padding:7px 4px;text-align:center;border:1px solid #34463e;border-radius:7px}
+.stripes dt{font-size:.72rem;color:var(--muted)}
+.stripes dd{font-size:.96rem;margin:4px 0 0;color:var(--gold);font-variant-numeric:tabular-nums}
+.commands{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.commands button{display:flex;align-items:center;justify-content:space-between;gap:4px;text-align:left;font-size:.87rem}
+.commands small{font-size:.71rem;color:#e3c491;white-space:nowrap}
+.subtitle{margin:0;color:var(--muted);font-size:.82rem}
+.campaign{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.campaign select{width:100%;height:40px;font-size:.85rem}
+.campaign .full{grid-column:1/-1}
+.fields{display:grid;gap:6px;grid-column:1/-1}
+.fields label{display:flex;justify-content:space-between;gap:4px;font-size:.82rem}
+input[type="range"]{width:100%;min-height:25px;accent-color:var(--gold)}
+.footer{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:13px;padding:11px 12px;background:#1b2b25;border:1px solid var(--line);border-radius:10px}
+#notice{font-size:.88rem;color:var(--gold);margin:0;line-height:1.45}
+#next{white-space:nowrap}
+#notice a{color:inherit}
+@media(max-width:790px){.game-grid{grid-template-columns:1fr}.map{height:clamp(335px,79vw,480px)}header{margin-bottom:12px;min-height:53px}.map button{min-width:38px;font-size:.76rem;padding:3px 4px}.map button small{font-size:.58rem}.timeline{margin-top:9px}.panel-title{padding:10px 13px}.hud{gap:6px}}
+@media(max-width:365px){.stat span,.stripes dt{font-size:.68rem}.stat{min-height:54px;padding:7px 5px}.orders{padding:9px}.city{min-height:28px}}
+</style>
+</head>
+<body>
+<main class="shell">
+<header><strong><span class="seal" aria-hidden="true">漢</span>천하의 판도</strong><button id="back" type="button" hidden>시나리오 선택</button></header>
+<section id="setup" class="setup" aria-labelledby="setup-title">
+<h1 id="setup-title">천하의 주인은 누구인가</h1>
+<p>군주를 골라 도시를 키우고, 장수를 모아 천하를 통일하세요.</p>
+<h2>시나리오</h2><div id="scenarios" class="scenarios"></div><p id="scenario-note"></p>
+<h2>플레이할 군주</h2><div id="lords" class="lords"></div>
+<div class="starter"><button id="start" class="primary" type="button">새 게임 시작</button><button id="resume" type="button" hidden>저장된 게임 이어하기</button></div>
+</section>
+<div id="match" hidden>
+  <section class="hud" aria-label="전역 정보">
+    <div class="stat"><span>현재 날짜</span><strong id="date"></strong></div>
+    <div class="stat"><span>세력 · 도시</span><strong id="holdings"></strong></div>
+    <div class="stat"><span>금</span><strong id="gold"></strong></div>
+    <div class="stat"><span>군량</span><strong id="food"></strong></div>
+  </section>
+  <div class="game-grid">
+    <section class="panel" aria-labelledby="map-title">
+      <div class="panel-title"><h2 id="map-title" tabindex="-1">전략 지도</h2><span id="ready"></span></div>
+      <div class="map" id="map"><canvas id="terrain" aria-hidden="true"></canvas><div id="map-cities"></div></div>
+      <div id="legend" class="legend" aria-label="세력 범례"></div>
+    </section>
+    <section class="panel" aria-labelledby="city-title">
+      <div class="panel-title"><h2 id="city-title"></h2><span id="city-owner"></span></div>
+      <div class="orders">
+        <dl class="stripes" id="city-stats"></dl>
+        <p class="subtitle" id="officers"></p>
+        <div class="commands" id="commands" aria-label="도시 명령"></div>
+        <div class="campaign" id="campaign">
+          <label><select id="mission" aria-label="작전 종류"><option value="attack">출정</option><option value="move">증원</option><option value="truce">휴전 제안</option></select></label>
+          <label><select id="target" aria-label="작전 대상 도시"></select></label>
+          <div class="fields" id="fields"><label for="troops"><span id="troops-label">파견 병력</span><output id="troops-out"></output></label><input id="troops" type="range" min="100" step="1"></div>
+          <button class="full" type="button" id="execute">작전 실행</button>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="footer"><p id="notice" role="status"></p><button id="next" class="primary" type="button">다음 달</button></div>
+  <section class="panel timeline" aria-labelledby="timeline-title"><div class="panel-title"><h3 id="timeline-title">전황 기록</h3><span id="save-status"></span></div><ul id="events"></ul></section>
+</div>
+</main>
+<script>
+
+'use strict';
+
+const cities = {
+  ji:      { name:'계',   x:83, y:17, land:39, trade:39, wall:29 },
+  ye:      { name:'업',   x:66, y:31, land:58, trade:52, wall:44 },
+  beihai:  { name:'북해', x:91, y:39, land:51, trade:52, wall:27 },
+  luoyang: { name:'낙양', x:41, y:39, land:45, trade:58, wall:46 },
+  changan: { name:'장안', x:17, y:32, land:43, trade:48, wall:53 },
+  xuchang: { name:'허창', x:57, y:51, land:56, trade:50, wall:31 },
+  xiapi:   { name:'하비', x:86, y:58, land:52, trade:57, wall:38 },
+  chengdu: { name:'성도', x:15, y:70, land:58, trade:46, wall:36 },
+  xiang:   { name:'양양', x:43, y:69, land:55, trade:53, wall:38 },
+  wu:      { name:'오',   x:82, y:82, land:53, trade:47, wall:26 }
+};
+const routes = [
+  ['ji','ye'],['ji','beihai'],['ye','beihai'],['ye','luoyang'],['ye','xuchang'],
+  ['beihai','xiapi'],['changan','luoyang'],['changan','chengdu'],['luoyang','xuchang'],
+  ['luoyang','xiang'],['xuchang','xiapi'],['xuchang','xiang'],['xiang','chengdu'],
+  ['xiang','wu'],['xiapi','wu']
+];
+const neighbors = Object.fromEntries(Object.keys(cities).map(id => [
+  id, routes.filter(route => route.includes(id)).map(route => route.find(endpoint => endpoint !== id))
+]));
+const factions = {
+  cao:{name:'조조',color:'#7de0e4',officer:'하후돈',war:84,admin:83},
+  liu:{name:'유비',color:'#91dcaa',officer:'장비',war:86,admin:65},
+  sun:{name:'손견',color:'#f3b775',officer:'황개',war:82,admin:70},
+  ce:{name:'손책',color:'#f3b775',officer:'주유',war:86,admin:86},
+  yuan:{name:'원소',color:'#caafe7',officer:'안량',war:80,admin:72},
+  dong:{name:'동탁',color:'#f08e87',officer:'이각',war:82,admin:61},
+  bu:{name:'여포',color:'#f08e87',officer:'고순',war:95,admin:53},
+  neutral:{name:'중립',color:'#9daba8'}
+};
+const scenarios = {
+  189:{ title:'흔들리는 제국', note:'낙양과 장안의 동탁, 북방의 원소를 중심으로 세력을 재편하는 가상 판도.',
+    owners:{ luoyang:'dong', changan:'dong', ye:'yuan', xuchang:'cao', beihai:'liu', xiang:'sun' },
+    starts:['cao','liu','sun','yuan','dong'] },
+  196:{ title:'갈라진 천하', note:'허창의 조조, 하비의 여포, 강동의 손책이 맞서는 가상 판도.',
+    owners:{ luoyang:'cao', xuchang:'cao', xiapi:'bu', beihai:'liu', ji:'yuan', ye:'yuan', wu:'ce' },
+    starts:['cao','liu','ce','yuan','bu'] }
+};
+const officers = [
+  {name:'서서',war:62,admin:88}, {name:'태사자',war:89,admin:58}, {name:'조운',war:92,admin:74},
+  {name:'노숙',war:67,admin:91}, {name:'위연',war:85,admin:60}, {name:'만총',war:71,admin:83},
+  {name:'장합',war:86,admin:69}, {name:'가후',war:68,admin:93}
+];
+const costs = { farm:30, market:32, train:24, conscript:40, enlist:48, fortify:35, truce:80 };
+const CLAMP = (n, min, max) => Math.min(max, Math.max(min, n));
+const FACTIONS = Object.keys(factions).filter(id => id !== 'neutral');
+const SAVE_KEY = 'go-play.sam.v1';
+
+function createGame(year, player, seed) {
+  const scenario = scenarios[year];
+  if (!scenario || !scenario.starts.includes(player)) throw new Error('시나리오와 군주를 확인하세요.');
+  const state = {version:1, year:Number(year), month:1, turn:0, player, seed:seed >>> 0, selected:null,
+    phase:'playing', pool:officers.map(officer => ({...officer})), cities:{}, accounts:{}, truces:{}, logs:[]};
+  for (const id of scenario.starts) state.accounts[id] = { gold:220, food:360 };
+  const assigned = new Set();
+  for (const [id, city] of Object.entries(cities)) {
+    const owner = scenario.owners[id] || 'neutral';
+    const primary = owner !== 'neutral' && !assigned.has(owner);
+    const officer = primary ? factions[owner] : null;
+    if (primary) assigned.add(owner);
+    state.cities[id] = {
+      owner, troops:primary ? 570 : owner === 'neutral' ? 200 : 390,
+      land:city.land, trade:city.trade, wall:city.wall, morale:65, acted:false,
+      officers: officer ? [{name:officer.officer, war:officer.war, admin:officer.admin}] : []
+    };
+    if (owner === player && !state.selected) state.selected = id;
+  }
+  log(state, String(year) + '년 · ' + factions[player].name + '의 원정이 시작됩니다.');
+  return state;
+}
+
+function log(state, text) {
+  state.logs.unshift({date:state.year + '.' + String(state.month).padStart(2,'0'), text});
+  state.logs.length = Math.min(state.logs.length, 60);
+}
+
+function random(state) {
+  state.seed = (Math.imul(state.seed, 1664525) + 1013904223) >>> 0;
+  return state.seed / 4294967296;
+}
+
+function best(city, skill) {
+  return Math.max(skill === 'war' ? 52 : 55, ...city.officers.map(officer => officer[skill]));
+}
+
+function truceKey(a,b) { return [a,b].sort().join(':'); }
+function isTruce(state, a, b) { return (state.truces[truceKey(a,b)] || 0) > state.turn; }
+function alive(state, id) { return Object.values(state.cities).some(city => city.owner === id); }
+function upkeepFor(troops) { return Math.ceil(troops / 48); }
+function marchFood(troops) { return Math.ceil(troops / 8); }
+
+function targets(state, source, type) {
+  const owner = state.cities[source].owner;
+  return neighbors[source].filter(id => {
+    const other = state.cities[id].owner;
+    return type === 'move' ? other === owner : other !== owner && !isTruce(state, owner, other)
+      && (type !== 'truce' || other !== 'neutral');
+  });
+}
+
+function order(state, id, type, options = {}) {
+  if (state.phase !== 'playing') return '종료된 전역입니다.';
+  const city = state.cities[id];
+  const owner = options.actor || state.player;
+  const account = state.accounts[owner];
+  if (!city || city.owner !== owner || !account) return '소유 도시를 선택하세요.';
+  if (city.acted) return '이 도시는 이번 달에 이미 명령을 수행했습니다.';
+  let message;
+  if (['attack','move','truce'].includes(type)) {
+    const targetId = options.target;
+    if (!targets(state, id, type).includes(targetId)) return '해당 도시를 대상으로 삼을 수 없습니다.';
+    const target = state.cities[targetId];
+    if (type === 'truce') {
+      if (account.gold < costs.truce) return '금이 부족합니다.';
+      account.gold -= costs.truce;
+      state.truces[truceKey(owner,target.owner)] = state.turn + 3;
+      message = factions[owner].name + '와 ' + factions[target.owner].name + ', 이번 달부터 석 달간 휴전.';
+    } else {
+      const troops = Number(options.troops);
+      if (!Number.isInteger(troops) || troops < 100 || troops > city.troops - 80) return '100명 이상을 보내고 80명 이상을 남겨야 합니다.';
+      const supply = marchFood(troops);
+      if (account.food < supply) return '출정 군량이 부족합니다.';
+      account.food -= supply;
+      city.troops -= troops;
+      if (type === 'move') {
+        target.troops += troops;
+        message = cities[id].name + ' → ' + cities[targetId].name + '에 ' + troops + '명 증원.';
+      } else {
+        const attack = troops * (0.54 + best(city,'war') / 150 + city.morale / 240) * (0.9 + random(state) * 0.2);
+        const defense = target.troops * (0.48 + best(target,'war') / 170 + target.morale / 250 + target.wall / 150)
+          * (0.92 + random(state) * 0.16);
+        if (attack > defense) {
+          const remaining = Math.max(1, troops - Math.round(Math.min(troops * 0.64, target.troops * 0.45)));
+          const oldOwner = target.owner;
+          const refuge = neighbors[targetId].map(key => state.cities[key]).find(candidate => candidate.owner === oldOwner);
+          if (refuge && oldOwner !== 'neutral') refuge.officers.push(...target.officers);
+          target.officers = [];
+          target.owner = owner;
+          target.troops = remaining;
+          target.morale = 63;
+          target.wall = Math.max(15, target.wall - 8);
+          target.acted = true;
+          message = factions[owner].name + '군, ' + cities[targetId].name + ' 점령 · 주둔 ' + remaining + '명.';
+        } else {
+          const lost = Math.min(troops - 1, Math.round(troops * (0.27 + random(state) * 0.16)));
+          city.troops += troops - lost;
+          target.troops = Math.max(1, target.troops - Math.round(Math.min(troops * 0.28, target.troops * 0.55)));
+          city.morale = Math.max(30, city.morale - 8);
+          message = factions[owner].name + '군, ' + cities[targetId].name + '에서 후퇴 · ' + lost + '명 손실.';
+        }
+      }
+    }
+  } else {
+    if (!Object.hasOwn(costs,type)) return '알 수 없는 명령입니다.';
+    if (account.gold < costs[type]) return '금이 부족합니다.';
+    const boost = 6 + Math.floor(best(city,'admin') / 12);
+    const cap = {farm:'land',market:'trade',train:'morale',fortify:'wall'}[type];
+    if (cap && city[cap] >= 100) return '이미 최대치입니다.';
+    if (type === 'enlist' && state.pool.length === 0) return '등용할 재야 장수가 없습니다.';
+    account.gold -= costs[type];
+    const label = cities[id].name + ' · ';
+    if (type === 'farm') { city.land = Math.min(100, city.land + boost); message = label + '개간 · 농업 ' + city.land; }
+    if (type === 'market') { city.trade = Math.min(100, city.trade + boost); message = label + '시장 정비 · 상업 ' + city.trade; }
+    if (type === 'train') { city.morale = Math.min(100, city.morale + 15); message = label + '훈련 · 사기 ' + city.morale; }
+    if (type === 'fortify') { city.wall = Math.min(100, city.wall + 12); message = label + '성벽 보수 · 방어 ' + city.wall; }
+    if (type === 'conscript') {
+      const added = 125 + Math.floor(city.land / 2);
+      city.troops += added;
+      city.morale = Math.max(30, city.morale - 3);
+      message = label + added + '명 징병.';
+    }
+    if (type === 'enlist') {
+      const [officer] = state.pool.splice(Math.floor(random(state) * state.pool.length),1);
+      city.officers.push(officer);
+      message = label + officer.name + ' 등용 · 무력 ' + officer.war + ', 정치 ' + officer.admin;
+    }
+  }
+  city.acted = true;
+  log(state,message);
+  checkEnding(state);
+  return null;
+}
+
+function checkEnding(state) {
+  if (state.phase !== 'playing') return;
+  const owned = Object.values(state.cities).filter(city => city.owner === state.player).length;
+  if (owned === Object.keys(cities).length) {
+    state.phase = 'won';
+    log(state,'모든 도시를 확보했습니다. 천하 통일!');
+  }
+  if (owned === 0) {
+    state.phase = 'lost';
+    log(state,'마지막 도시를 잃었습니다. 원정 종료.');
+  }
+}
+
+function runRival(state, actor) {
+  const owned = Object.keys(cities).filter(id => state.cities[id].owner === actor && !state.cities[id].acted);
+  const viable = owned.sort((a,b) => state.cities[b].troops - state.cities[a].troops);
+  for (const id of viable) {
+    const city = state.cities[id];
+    const troops = city.troops - 85;
+    const target = targets(state,id,'attack').sort((a,b) => state.cities[a].troops - state.cities[b].troops)[0];
+    if (target && troops >= Math.max(160, state.cities[target].troops * 1.42)
+      && random(state) < 0.76 && !order(state,id,'attack',{actor,target,troops})) return;
+  }
+  const frontier = viable.find(id => targets(state,id,'attack').length);
+  const id = frontier || viable[0];
+  if (!id) return;
+  const city = state.cities[id];
+  const account = state.accounts[actor];
+  const type = account.food < 115 ? 'farm' : city.troops < 720 ? 'conscript' : city.morale < 81 ? 'train' : 'market';
+  order(state,id,type,{actor});
+}
+
+function advance(state) {
+  if (state.phase !== 'playing') return;
+  for (const actor of FACTIONS) {
+    if (actor !== state.player && alive(state,actor)) runRival(state,actor);
+    if (state.phase !== 'playing') return;
+  }
+  state.turn++;
+  state.month++;
+  if (state.month === 13) { state.month = 1; state.year++; }
+  let playerGold = 0, playerFood = 0, playerUpkeep = 0;
+  for (const city of Object.values(state.cities)) {
+    city.acted = false;
+    if (city.owner === 'neutral') continue;
+    const account = state.accounts[city.owner];
+    const gold = 12 + Math.floor(city.trade / 2);
+    const food = 19 + Math.floor(city.land / 2) + (state.month === 10 ? city.land * 2 : 0);
+    const upkeep = upkeepFor(city.troops);
+    account.gold += gold;
+    account.food += food - upkeep;
+    if (city.owner === state.player) { playerGold += gold; playerFood += food; playerUpkeep += upkeep; }
+  }
+  for (const [owner, account] of Object.entries(state.accounts)) {
+    if (account.food >= 0) continue;
+    account.food = 0;
+    for (const city of Object.values(state.cities)) {
+      if (city.owner === owner) city.troops = Math.max(1, Math.floor(city.troops * 0.94));
+    }
+    log(state,factions[owner].name + '군의 군량이 부족해 병력이 이탈했습니다.');
+  }
+  log(state,'월간 결산 · 금 +' + playerGold + ' · 군량 수입 +' + playerFood + ' / 유지 −' + playerUpkeep);
+}
+
+function readSave() {
+  try {
+    const value = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if (value?.version === 1 && factions[value.player] && cities[value.selected] && Array.isArray(value.logs)
+      && Object.keys(cities).every(id => value.cities?.[id]) && value.accounts?.[value.player]) return value;
+  } catch { return null; }
+  return null;
+}
+
+const el = id => document.getElementById(id);
+const number = new Intl.NumberFormat('ko-KR');
+const commandSpecs = [
+  ['farm','개간'], ['market','시장 정비'], ['conscript','징병'],
+  ['train','훈련'], ['enlist','장수 등용'], ['fortify','성벽 보수']
+];
+let game = null;
+let savedGame = readSave();
+let setupYear = 189;
+let setupLord = 'cao';
+let message = '';
+let missionCity = null;
+const mapButtons = {};
+const commandButtons = {};
+const context = el('terrain').getContext('2d');
+
+function button(label, action) {
+  const node = document.createElement('button');
+  node.type = 'button';
+  node.textContent = label;
+  node.addEventListener('click',action);
+  return node;
+}
+
+function save() {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(game));
+    savedGame = game;
+    el('save-status').textContent = '이 브라우저에 자동 저장';
+  } catch {
+    el('save-status').textContent = '자동 저장을 사용할 수 없음';
+  }
+}
+
+const scenarioButtons = Object.entries(scenarios).map(([year, scenario]) => [
+  Number(year),
+  button(year + '년 · ' + scenario.title, () => {
+    setupYear = Number(year);
+    if (!scenario.starts.includes(setupLord)) setupLord = scenario.starts[0];
+    renderSetup();
+    el('scenarios').querySelector('[aria-pressed="true"]').focus();
+  })
+]);
+el('scenarios').replaceChildren(...scenarioButtons.map(([,node]) => node));
+
+function renderSetup() {
+  for (const [year,node] of scenarioButtons) node.setAttribute('aria-pressed', String(year === setupYear));
+  el('lords').replaceChildren(...scenarios[setupYear].starts.map(id => {
+    const node = button(factions[id].name, () => {
+      setupLord = id;
+      for (const child of el('lords').children) child.setAttribute('aria-pressed', String(child === node));
+    });
+    node.style.borderColor = factions[id].color;
+    node.setAttribute('aria-pressed', String(id === setupLord));
+    return node;
+  }));
+  el('scenario-note').textContent = scenarios[setupYear].note;
+  el('resume').hidden = !savedGame;
+}
+
+function openGame(state) {
+  game = state;
+  missionCity = null;
+  message = '';
+  el('setup').hidden = true;
+  el('match').hidden = false;
+  el('back').hidden = false;
+  render();
+  save();
+  el('map-title').focus();
+}
+
+function terrain() {
+  if (!context || el('match').hidden) return;
+  const map = el('map');
+  const width = map.clientWidth, height = map.clientHeight;
+  const scale = Math.min(window.devicePixelRatio || 1,2);
+  const canvas = el('terrain');
+  canvas.width = Math.round(width * scale);
+  canvas.height = Math.round(height * scale);
+  context.setTransform(width * scale / 100,0,0,height * scale / 100,0,0);
+  const draw = (coords, color, lineWidth, fill) => {
+    context.beginPath();
+    for (const [i,[x,y]] of coords.entries()) {
+      if (i === 0) context.moveTo(x,y);
+      else context.lineTo(x,y);
+    }
+    if (fill) {
+      context.closePath();
+      context.fillStyle = fill;
+      context.fill();
+    }
+    if (color) {
+      context.strokeStyle = color;
+      context.lineWidth = lineWidth;
+      context.stroke();
+    }
+  };
+  draw([[100,0],[100,100],[93,100],[88,91],[94,80],[91,70],[95,62],[95,51],[98,44],[94,28],[98,17]],'#84a7a367',.35,'#20444a');
+  draw([[0,47],[8,36],[15,21],[28,18],[41,23],[46,14],[52,10],[67,14],[73,23]],'#86957365',.35);
+  draw([[0,94],[15,88],[22,83],[37,91],[52,93],[68,89],[81,93]],'#86957365',.35);
+  draw([[0,24],[9,27],[21,28],[31,32],[43,32],[55,39],[65,36],[72,40],[83,42],[90,48],[95,51]],'#7bb2b69f',.43);
+  draw([[0,60],[13,64],[23,72],[34,75],[44,73],[55,78],[67,76],[75,78],[86,74],[93,75]],'#7bb2b69f',.48);
+  for (let i=0; i<105; i++) {
+    const x = 2 + (i * 37.17) % 89;
+    const y = 3 + (i * 29.69) % 94;
+    context.fillStyle = i % 2 ? '#cccf9220' : '#c6e6ca19';
+    context.fillRect(x,y,.17,.19);
+  }
+  context.setLineDash([.63,.59]);
+  for (const [a,b] of routes) {
+    const from = cities[a], to = cities[b];
+    const active = game.selected === a || game.selected === b;
+    draw([[from.x,from.y],[to.x,to.y]],active ? '#f2d18db8' : '#c2c8a273',active ? .37 : .24);
+  }
+  context.setLineDash([]);
+}
+
+function renderMap() {
+  for (const [id, city] of Object.entries(game.cities)) {
+    const holder = factions[city.owner];
+    const node = mapButtons[id];
+    node.style.setProperty('--owner',holder.color);
+    node.setAttribute('aria-pressed',String(id === game.selected));
+    node.setAttribute('aria-label',cities[id].name + ' · ' + holder.name);
+    node.lastElementChild.textContent = holder.name;
+  }
+  const owners = Array.from(new Set(Object.values(game.cities).map(city => city.owner)));
+  el('legend').replaceChildren(...owners.map(owner => {
+    const label = document.createElement('span');
+    const dot = document.createElement('i');
+    dot.style.setProperty('--owner',factions[owner].color);
+    label.append(dot, factions[owner].name);
+    return label;
+  }));
+  terrain();
+}
+
+function renderCampaign(resetTarget = false) {
+  const source = game.selected;
+  const city = game.cities[source];
+  const account = game.accounts[game.player];
+  const mission = el('mission').value;
+  const target = el('target');
+  const list = targets(game, source, mission);
+  const previous = target.value;
+  const options = list.map(id => new Option(cities[id].name + ' · ' + factions[game.cities[id].owner].name,id));
+  target.replaceChildren(...(options.length ? options : [new Option('대상 없음','')]));
+  if (!resetTarget && list.includes(previous)) target.value = previous;
+  const range = el('troops');
+  const max = Math.min(city.troops - 80, account.food * 8);
+  const last = Number(range.value);
+  range.max = String(Math.max(100,max));
+  range.value = String(missionCity === source ? CLAMP(last || max,100,Math.max(100,max)) : Math.max(100,max));
+  missionCity = source;
+  const restricted = game.phase !== 'playing' || city.acted;
+  el('mission').disabled = restricted;
+  target.disabled = restricted || list.length === 0;
+  range.disabled = restricted || max < 100 || list.length === 0;
+  el('execute').disabled = restricted || list.length === 0 || (mission === 'truce' ? account.gold < costs.truce : max < 100);
+  el('fields').hidden = mission === 'truce';
+  el('execute').textContent = mission === 'truce' ? '휴전 체결 · 금 80' : mission === 'move' ? '증원 파견' : '출정 명령';
+  updateTroops();
+}
+
+function updateTroops() {
+  const troops = Number(el('troops').value);
+  el('troops-out').textContent = number.format(troops) + '명 · 군량 ' + marchFood(troops);
+}
+
+function render() {
+  const account = game.accounts[game.player];
+  const owned = Object.values(game.cities).filter(city => city.owner === game.player);
+  const remaining = owned.filter(city => !city.acted).length;
+  const city = game.cities[game.selected];
+  const friendly = city.owner === game.player;
+  el('date').textContent = game.year + '년 ' + game.month + '월';
+  el('holdings').textContent = factions[game.player].name + ' · ' + owned.length + ' / ' + Object.keys(cities).length;
+  el('gold').textContent = number.format(account.gold);
+  el('food').textContent = number.format(account.food);
+  el('ready').textContent = '명령 가능 ' + remaining + '개 도시';
+  el('next').disabled = game.phase !== 'playing';
+  renderMap();
+  el('city-title').textContent = cities[game.selected].name;
+  el('city-owner').textContent = factions[city.owner].name + (friendly && city.acted ? ' · 명령 완료' : '');
+  const stats = [['병력',city.troops],['농업',city.land],['상업',city.trade],['성벽',city.wall],['사기',city.morale]];
+  el('city-stats').replaceChildren(...stats.map(([label,value]) => {
+    const item = document.createElement('div');
+    const term = document.createElement('dt');
+    const data = document.createElement('dd');
+    term.textContent = label;
+    data.textContent = number.format(value);
+    item.append(term,data);
+    return item;
+  }));
+  el('officers').textContent = city.officers.length
+    ? '장수 · ' + city.officers.map(officer => officer.name).join(', ')
+    : '장수 · 없음';
+  el('officers').title = city.officers.map(officer => officer.name + ' · 무력 ' + officer.war + ', 정치 ' + officer.admin).join(' / ');
+  el('commands').hidden = !friendly;
+  el('campaign').hidden = !friendly;
+  const statsByCommand = {farm:'land',market:'trade',train:'morale',fortify:'wall'};
+  for (const [type,node] of Object.entries(commandButtons)) {
+    node.disabled = game.phase !== 'playing' || city.acted || account.gold < costs[type]
+      || city[statsByCommand[type]] >= 100 || (type === 'enlist' && game.pool.length === 0);
+  }
+  if (friendly) renderCampaign();
+  el('notice').textContent = message || (game.phase === 'won' ? '천하를 통일했습니다.'
+    : game.phase === 'lost' ? '마지막 도시를 잃었습니다.'
+      : friendly ? city.acted ? '다른 도시를 선택하거나 다음 달로 진행하세요.'
+        : '도시마다 한 달에 한 번 명령할 수 있습니다.' : '작전을 내리려면 내 도시를 선택하세요.');
+  el('events').replaceChildren(...game.logs.map(event => {
+    const row = document.createElement('li');
+    const time = document.createElement('time');
+    const content = document.createElement('span');
+    time.textContent = event.date;
+    content.textContent = event.text;
+    row.append(time,content);
+    return row;
+  }));
+}
+
+function perform(type, options) {
+  const error = order(game,game.selected,type,options);
+  message = error || game.logs[0].text;
+  render();
+  if (!error) save();
+}
+
+for (const [id,city] of Object.entries(cities)) {
+  const node = button(city.name, () => {
+    game.selected = id;
+    message = '';
+    el('mission').value = 'attack';
+    render();
+    save();
+  });
+  node.className = 'city';
+  node.style.left = city.x + '%';
+  node.style.top = city.y + '%';
+  node.append(document.createElement('small'));
+  el('map-cities').append(node);
+  mapButtons[id] = node;
+}
+for (const [type,label] of commandSpecs) {
+  const node = button(label, () => perform(type));
+  const gold = document.createElement('small');
+  gold.textContent = '금 ' + costs[type];
+  node.append(gold);
+  el('commands').append(node);
+  commandButtons[type] = node;
+}
+el('mission').addEventListener('change',() => renderCampaign(true));
+el('troops').addEventListener('input', updateTroops);
+el('execute').addEventListener('click', () => perform(el('mission').value, {
+  target:el('target').value, troops:Number(el('troops').value)
+}));
+el('next').addEventListener('click', () => {
+  advance(game);
+  message = game.logs[0].text;
+  render();
+  save();
+});
+el('start').addEventListener('click', () => {
+  if (savedGame?.phase === 'playing' && !confirm('새 게임을 시작하면 기존 자동 저장이 덮어써집니다. 계속할까요?')) return;
+  openGame(createGame(setupYear,setupLord,Date.now()));
+});
+el('resume').addEventListener('click', () => { if (savedGame) openGame(savedGame); });
+el('back').addEventListener('click', () => {
+  el('match').hidden = true;
+  el('setup').hidden = false;
+  el('back').hidden = true;
+  renderSetup();
+  el('scenarios').querySelector('[aria-pressed="true"]').focus();
+});
+if (typeof ResizeObserver === 'function') new ResizeObserver(terrain).observe(el('map'));
+else window.addEventListener('resize',terrain);
+renderSetup();
+
+</script>
+</body>
+</html>
